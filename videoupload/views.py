@@ -60,6 +60,7 @@ from rest_framework.response import Response
   # Replace 'your_app' with your actual app name
 from django.core.files.base import ContentFile
 from PIL import Image
+import io
 
 import os
 import uuid
@@ -78,9 +79,9 @@ class VideoViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = VideoSerializer(data=request.data)
 
-        if serializer.is_valid():
+        if serializer. is_valid():
             video_file = request.data.get('file')
-            title = serializer.validated_data.get('title', '')
+            title = request.data.get('title', '')
 
             if not video_file:
                 return Response({'error': 'No video file provided'}, status=status.HTTP_400_BAD_REQUEST)
@@ -97,50 +98,56 @@ class VideoViewSet(viewsets.ModelViewSet):
                 # Use the original file name as the key for the video file within the 'videos' directory
                 video_key = f'videos/{video_file.name}'
 
-                # Upload the video directly to Vultr Object Storage
-                with open(video_file.temporary_file_path(), 'rb') as video_data:
-                    s3.upload_fileobj(video_data, 'your-new-bucket', video_key)
+                # Save the video directly to Vultr Object Storage
+                video_data = video_file.read()
+
+                s3.upload_fileobj(io.BytesIO(video_data), 'your-new-bucket', video_key)
 
                 # Generate a thumbnail from the video and save it
-                thumbnail_path = self.generate_and_save_thumbnail(video_file.temporary_file_path())
+                thumbnail_path = self.generate_and_save_thumbnail(video_data)
 
-                # Generate a unique key for the thumbnail file within the 'videos' directory
-                thumbnail_key = f'videos/{video_file.name}.thumbnail.jpg'
+                if thumbnail_path:
+                    # Generate a unique key for the thumbnail file within the 'videos' directory
+                    thumbnail_key = f'videos/{video_file.name}.thumbnail.jpg'
 
-                # Upload the thumbnail image directly to Vultr Object Storage
-                with open(thumbnail_path, 'rb') as thumbnail_data:
-                    s3.upload_fileobj(thumbnail_data, 'your-new-bucket', thumbnail_key)
+                    # Upload the thumbnail image directly to Vultr Object Storage
+                    thumbnail_data = open(thumbnail_path, 'rb').read()
 
-                # Save the video data to the database, including the video and thumbnail keys
-                serializer.save(file=video_key, thumbnail=thumbnail_key)
+                    s3.upload_fileobj(io.BytesIO(thumbnail_data), 'your-new-bucket', thumbnail_key)
 
-                # Clean up temporary files
-                os.remove(thumbnail_path)
+                    # Save the video data to the database, including the video and thumbnail keys
+                    serializer.save(file=video_key, thumbnail=thumbnail_key)
 
-                return Response({'message': 'Video uploaded successfully'},
-                                status=status.HTTP_201_CREATED)
+                    # Clean up temporary files
+                    os.remove(thumbnail_path)
+
+                    return Response({'message': 'Video uploaded successfully'}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({'error': 'Thumbnail generation failed'},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def generate_and_save_thumbnail(self, video_path):
+    def generate_and_save_thumbnail(self, video_data):
         try:
             # Load the video using MoviePy
-            video = mp.VideoFileClip(video_path)
+            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_video_file:
+                temp_video_file.write(video_data)
+
+            video = mp.VideoFileClip(temp_video_file.name)
 
             # Generate the thumbnail from the first frame of the video
             thumbnail = video.get_frame(0)
 
-            # Define the output file path for the thumbnail
-            thumbnail_path = "thumbnail.jpg"
+            # Create a temporary file to save the thumbnail
+            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_thumbnail_file:
+                thumbnail_image = Image.fromarray(thumbnail)
+                thumbnail_image.save(temp_thumbnail_file.name)
 
-            # Save the thumbnail image using PIL
-            thumbnail_image = Image.fromarray(thumbnail)
-            thumbnail_image.save(thumbnail_path)
-
-            return thumbnail_path
+                return temp_thumbnail_file.name
         except Exception as e:
             # Handle any errors that may occur during thumbnail creation
             print(f"Thumbnail creation error: {str(e)}")
