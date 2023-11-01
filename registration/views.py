@@ -167,7 +167,13 @@ class RegistrationView(APIView):
 
             # Check if a referral code was provided by the user
             referral_code = request.data.get('referral_code', 'admi_1541')
+            referral_code = referral_code.strip()
+            referrer = CustomUser.objects.filter(username_code=referral_code).first()
 
+            if not referrer:
+                referral_code = 'admi_1541'
+
+            user.referral_code = referral_code
             if referral_code:
                 user.referral_code = referral_code
                 try:
