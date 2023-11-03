@@ -15,10 +15,10 @@ urlpatterns = [
     path('comment/', CommentCreateView.as_view(), name='comment-create'),
     # path('comment/<int:pk>/', CommentEditView.as_view(), name='comment-edit-delete'),  # Edit and Delete Comment
     # path('comments/<int:video_id>/', CommentListView.as_view(), name='comment-list'),
-    path('comments/<int:parent_comment_id>/replies/', ReplyCommentListView.as_view(), name='reply-comment-list'),
-    path('comment-count/<str:video_id>/', CommentCountView.as_view(), name='comment-count'),
-    path('comments/<int:pk>/edit/', CommentEditView.as_view(), name='comment-edit'),
-    path('comments/<int:pk>/delete/', CommentDeleteView.as_view(), name='comment-delete'),
+    path('comments/replies/', ReplyCommentListView.as_view(), name='reply-comment-list'),
+    path('comment-count/', CommentCountView.as_view(), name='comment-count'),
+    path('comments/edit/', CommentEditView.as_view(), name='comment-edit'),
+    path('comments/delete/', CommentDeleteView.as_view(), name='comment-delete'),
 
     path('api/get_video_link/', GetVideoLink.as_view(), name='get_video_link'),#get the video link
     path('videos/share/', VideoShareView.as_view(), name='video-share'),#update and increase the share count at the every click of copy button
