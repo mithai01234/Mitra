@@ -71,7 +71,8 @@ from rest_framework.response import Response
  # Replace 'your_app' with your actual app name
 import boto3
 from storages.backends.s3boto3 import S3Boto3Storage
-
+from rest_framework.response import Response
+from rest_framework import status
 class VideoViewSet(viewsets.ModelViewSet):
     queryset = Video.objects.all()
     serializer_class = VideoSerializer
@@ -729,16 +730,37 @@ class ReplyCommentListView(generics.ListAPIView):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        parent_comment_id = self.kwargs['parent_comment_id']
+        parent_comment_id = self.request.query_params.get('parent_comment_id', None)
+
+        if parent_comment_id is None:
+            return Comment.objects.none()
+
         queryset = Comment.objects.filter(parent_comment=parent_comment_id).order_by('timestamp')
         return queryset
 
+    def list(self, request, *args, **kwargs):
+        parent_comment_id = self.request.query_params.get('parent_comment_id', None)
+
+        if parent_comment_id is None:
+            return Response({'error': 'parent_comment_id is required as a query parameter'}, status=400)
+
+        queryset = self.get_queryset()
+        reply_count = queryset.count()
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'replies': serializer.data, 'reply_count': reply_count})
 
 class CommentCountView(generics.RetrieveAPIView):
-    def retrieve(self, request, video_id=None):
+    def retrieve(self, request):
+        video_id = request.query_params.get('video_id', None)
+
+        if video_id is None:
+            return Response({'error': 'video_id is required as a query parameter'}, status=400)
         def get_comment_data(comment):
             # Get the comment data
             comment_data = {
+                'id':comment.id,
+                'user_id':comment.user.id,
                 'username': comment.user.name,
                 'text': comment.text,
             }
@@ -782,15 +804,48 @@ class CommentCountView(generics.RetrieveAPIView):
 
         return Response(response_data)
 
-
-class CommentEditView(generics.RetrieveUpdateAPIView):  # Use RetrieveUpdateAPIView to handle both retrieval and update
+class CommentEditView(generics.UpdateAPIView):
     queryset = Comment.objects.all()
-    serializer_class = CommentUpdateSerializer  # Use the serializer for your Comment model
+    serializer_class = CommentUpdateSerializer
 
+    def post(self, request, *args, **kwargs):
+        comment_id = request.data.get('comment_id', None)
+        parent_comment_id = request.data.get('parent_comment_id', None)
+
+        if comment_id is not None:
+            try:
+                if parent_comment_id is not None:
+                    # Editing a reply
+                    comment = Comment.objects.get(id=comment_id, parent_comment=parent_comment_id)
+                else:
+                    # Editing a top-level comment
+                    comment = Comment.objects.get(id=comment_id)
+                serializer = self.get_serializer(comment, data=request.data, partial=True)
+
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            except Comment.DoesNotExist:
+                return Response({'error': 'Comment not found'})
+        else:
+            return Response({'error': 'comment_id is required to edit a comment'}, status=status.HTTP_BAD_REQUEST)
 class CommentDeleteView(generics.DestroyAPIView):
     queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        comment_id = request.data.get('comment_id', None)
+
+        if comment_id is not None:
+            try:
+                comment = Comment.objects.get(id=comment_id)
+                comment.delete()
+                return Response({'message': 'Comment deleted successfully'})
+            except Comment.DoesNotExist:
+                return Response({'error': 'Comment not found'})
+        else:
+            return Response({'error': 'comment_id is required to delete a comment'}, status=status.HTTP_BAD_REQUEST)
 
 
 
