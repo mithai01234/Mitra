@@ -330,7 +330,7 @@ from .serializers import ProfileUpdateSerializer
 
 class ProfileUpdateView(APIView):
 
-    def put(self, request):
+    def post(self, request):
         user_id = request.data.get('id', None)
         name = request.data.get('name', None)
         bio = request.data.get('bio', None)
@@ -355,6 +355,17 @@ class ProfileUpdateView(APIView):
 
         serializer = ProfileUpdateSerializer(user)
         return Response(serializer.data)
+    def get(self, request):
+        user_id=request.query_params.get('user_id',None)
+        if user_id == None:
+            return response("User_Id is required field")
+        else:
+            try:
+                user = CustomUser.objects.get(id=user_id)
+                serializer = ProfileUpdateSerializer(user)
+                return Response(serializer.data)
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User not found'})
 
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
@@ -422,7 +433,7 @@ def video_count_per_user(request):
 
     if user_id is not None:
         video_count = Video.objects.filter(user_id=user_id).count()
-        video_count_dict = {user_id: video_count}
+        video_count_dict = {"user_id":user_id,"post_count": video_count}
         return JsonResponse(video_count_dict)
     else:
         return JsonResponse({'error': 'user_id parameter is required'}, status=400)
