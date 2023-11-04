@@ -18,27 +18,25 @@ def toggle_follow(request):
     user_id = request.data.get('user_id')
 
     if target_user_id is None or user_id is None:
-        return Response({'error': 'Missing target_user_id or user_id in request data'}, status=400)
+        return Response({'error': 'Missing target_user_id or user_id in request data'})
 
     try:
-        # Attempt to retrieve the target user by ID
         target_user = CustomUser.objects.get(id=target_user_id)
         user = CustomUser.objects.get(id=user_id)
     except CustomUser.DoesNotExist:
-        return Response({'error': f'User with ID {target_user_id} or {user_id} does not exist'}, status=400)
+        return Response({'error': f'User with ID {target_user_id} or {user_id} does not exist'})
 
-    # Check if a follow relationship already exists
     follow_relationship = Follow.objects.filter(followed_id=user.id, follower_id=target_user.id).first()
 
     if follow_relationship:
-        # If a relationship exists, delete it to unfollow the user
-        follow_relationship.delete()
-        return Response({'message': f'Unfollowed user with ID {target_user_id}'}, status=200)
+        # If a relationship exists, set the Approved field to True
+        follow_relationship.approved = True
+        follow_relationship.save()  # Save the change
+        return Response({'message': f'Follow request approved for user with ID {target_user_id}'})
     else:
-        # If no relationship exists, create a new follow request
-        Follow.objects.create(followed_id=user.id, follower_id=target_user.id)
-        return Response({'message': f'Follow request sent to user with ID {target_user_id}'}, status=201)
-
+        # If no relationship exists, create a new follow request with Approved set to True
+        Follow.objects.create(followed_id=user.id, follower_id=target_user.id, approved=True)
+        return Response({'message': f'Follow request sent and approved to user with ID {target_user_id}'})
 
 @api_view(['GET'])
 def get_follow_requests(request):
