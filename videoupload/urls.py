@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CommentCreateView, GetVideoLink, CommentListView, VideoShareView, ReplyCommentListView, LikeViewSet,CommentCountView, CommentEditView, CommentDeleteView, VideoListView
+from .views import CommentCreateView, GetVideoLink, CommentListView, VideoShareView, ReplyCommentListView, LikeViewSet, \
+    CommentCountView, CommentEditView, CommentDeleteView, VideoListView, GetVideoInfoView
 from .views import VideoViewSet
 
 router = DefaultRouter()
@@ -24,6 +25,7 @@ urlpatterns = [
     path('videos/share/', VideoShareView.as_view(), name='video-share'),#update and increase the share count at the every click of copy button
     # path('upload-video/', VideoCreateView.as_view(), name='upload-video'),
     # path('list_s3_videos/', list_s3_videos, name='list_s3_videos'),
+    path('api/get-video-info/', GetVideoInfoView.as_view(), name='get-video-info'),
     path('api/videolist/', VideoListView.as_view(), name='video-list'),# give this code for get the videolist normally and using user_id params both time
 ]
 # http://127.0.0.1:8000/api/videolist?user_id=1
