@@ -702,6 +702,7 @@ class VideoListView(generics.ListAPIView):
         else:
             return hello
 
+
 class CommentCreateView(generics.CreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -887,6 +888,9 @@ class VideoShareView(generics.UpdateAPIView):
 #             return Response({'video_link': video_link}, status=status.HTTP_200_OK)
 #         except Video.DoesNotExist:
 #             return Response({'error': 'Video not found.'}, status=status.HTTP_404_NOT_FOUND)
+ # Import the new serializer
+
+
 class GetVideoLink(APIView):
     def get(self, request):
         video_title = request.query_params.get('id')
@@ -900,3 +904,32 @@ class GetVideoLink(APIView):
             return Response({'video_link': video_link}, status=status.HTTP_200_OK)
         except Video.DoesNotExist:
             return Response({'error': 'Video not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+from django.http import JsonResponse
+
+
+class GetVideoInfoView(APIView):
+    def get(self, request):
+        video_id = self.request.query_params.get('video_id')
+
+        if video_id is not None:
+            try:
+                video = Video.objects.get(id=video_id)
+                user_name = video.user_id.name
+                user_profile_photo = video.user_id.profile_photo.url
+                description = video.description
+                id=video.user_id.id
+
+                response_data = {
+                    'user_name': user_name,
+                    'user_profile_photo': user_profile_photo,
+                    'description': description,
+                    'user_id':id
+                }
+
+                return JsonResponse(response_data)
+            except Video.DoesNotExist:
+                return JsonResponse({'error': 'Video not found'}, status=404)
+        else:
+            return JsonResponse({'error': 'Video ID is required as a query parameter'}, status=400)
