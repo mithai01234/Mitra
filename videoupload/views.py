@@ -810,8 +810,8 @@ class CommentEditView(generics.UpdateAPIView):
     serializer_class = CommentUpdateSerializer
 
     def post(self, request, *args, **kwargs):
-        comment_id = request.data.get('comment_id', None)
-        parent_comment_id = request.data.get('parent_comment_id', None)
+        comment_id = request.query_params.get('comment_id')
+        parent_comment_id = request.query_params.get('parent_comment_id', None)
 
         if comment_id is not None:
             try:
@@ -829,14 +829,14 @@ class CommentEditView(generics.UpdateAPIView):
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             except Comment.DoesNotExist:
-                return Response({'error': 'Comment not found'})
+                return Response({'error': 'Comment not found'}, status=status.HTTP_404_NOT_FOUND)
         else:
-            return Response({'error': 'comment_id is required to edit a comment'}, status=status.HTTP_BAD_REQUEST)
+            return Response({'error': 'comment_id is required to edit a comment'}, status=status.HTTP_400_BAD_REQUEST)
 class CommentDeleteView(generics.DestroyAPIView):
     queryset = Comment.objects.all()
 
     def destroy(self, request, *args, **kwargs):
-        comment_id = request.data.get('comment_id', None)
+        comment_id = request.query_params.get('comment_id')
 
         if comment_id is not None:
             try:
@@ -889,7 +889,23 @@ class VideoShareView(generics.UpdateAPIView):
 #         except Video.DoesNotExist:
 #             return Response({'error': 'Video not found.'}, status=status.HTTP_404_NOT_FOUND)
  # Import the new serializer
+class VideoDeleteView(generics.DestroyAPIView):
+    queryset = Video.objects.all()
+    serializer_class = VideoSerializer
+      # You can define your own permission class here if needed
 
+    def destroy(self, request, *args, **kwargs):
+        video_id = request.query_params.get('video_id')
+
+        if video_id is not None:
+            try:
+                video = Video.objects.get(id=video_id)
+                video.delete()
+                return Response({"message": "Video deleted successfully"}, status=204)
+            except Video.DoesNotExist:
+                return Response({"error": "Video not found"}, status=404)
+        else:
+            return Response({"error": "Video ID is required as a query parameter"}, status=400)
 
 class GetVideoLink(APIView):
     def get(self, request):
