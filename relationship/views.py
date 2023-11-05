@@ -26,17 +26,17 @@ def toggle_follow(request):
     except CustomUser.DoesNotExist:
         return Response({'error': f'User with ID {target_user_id} or {user_id} does not exist'})
 
-    follow_relationship = Follow.objects.filter(followed_id=user.id, follower_id=target_user.id).first()
+    follow_relationship, created = Follow.objects.get_or_create(followed_id=user.id, follower_id=target_user.id)
 
-    if follow_relationship:
-        # If a relationship exists, set the Approved field to True
+    if created:
+        # If a new relationship is created, set the 'approved' field to True
         follow_relationship.approved = True
-        follow_relationship.save()  # Save the change
-        return Response({'message': f'Follow request approved for user with ID {target_user_id}'})
+        follow_relationship.save()
+        return Response({'message': f'You are now following user with ID {target_user_id}'})
     else:
-        # If no relationship exists, create a new follow request with Approved set to True
-        Follow.objects.create(followed_id=user.id, follower_id=target_user.id, approved=True)
-        return Response({'message': f'Follow request sent and approved to user with ID {target_user_id}'})
+        # If the relationship already exists, delete it to unfollow the user
+        follow_relationship.delete()
+        return Response({'message': f'You have unfollowed user with ID {target_user_id}'})
 
 @api_view(['GET'])
 def get_follow_requests(request):
