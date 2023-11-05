@@ -809,7 +809,7 @@ class CommentEditView(generics.UpdateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentUpdateSerializer
 
-    def post(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         comment_id = request.query_params.get('comment_id')
         parent_comment_id = request.query_params.get('parent_comment_id', None)
 
