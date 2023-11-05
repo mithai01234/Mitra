@@ -1,4 +1,4 @@
-
+from django.db.models import Sum
 from relationship.models import Follow
 from .serializers import VideoSerializer, LikeSerializer, CommentUpdateSerializer,CommentSerializer,VideoUpdateSerializer
 from django.shortcuts import render, redirect, get_object_or_404
@@ -719,6 +719,8 @@ class CommentCreateView(generics.CreateAPIView):
         )
 
 
+
+
 class CommentListView(generics.ListAPIView):
     serializer_class = CommentSerializer
 
@@ -818,6 +820,7 @@ class CommentEditView(generics.UpdateAPIView):
                 if parent_comment_id is not None:
                     # Editing a reply
                     comment = Comment.objects.get(id=comment_id, parent_comment=parent_comment_id)
+
                 else:
                     # Editing a top-level comment
                     comment = Comment.objects.get(id=comment_id)
@@ -878,7 +881,6 @@ class VideoShareView(generics.UpdateAPIView):
 # class GetVideoLink(APIView):
 #     def get(self, request):
 #         video_title = request.query_params.get('title')
-#
 #         if not video_title:
 #             return Response({'error': 'Title parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
 #
@@ -949,3 +951,32 @@ class GetVideoInfoView(APIView):
                 return JsonResponse({'error': 'Video not found'}, status=404)
         else:
             return JsonResponse({'error': 'Video ID is required as a query parameter'}, status=400)
+class PerformanceIncomeAPI(APIView):
+    def get(self, request):
+        user_id = request.query_params.get('user_id')
+
+        if user_id is None:
+            return Response({'error': 'user_id query parameter is missing'})
+
+        if user_id is None:
+            return Response({'error': 'user_id query parameter is missing'})
+
+        try:
+            user_points = Point.objects.filter(user_id=user_id)
+            total_points = user_points.aggregate(total_points=Sum('points'))['total_points']
+
+            # Fetch the total_amount from the user
+            user = CustomUser.objects.get(id=user_id)
+            total_amount = user.total_amount
+
+            if total_points is not None:
+                total_amount += total_points
+
+            response_data = {
+                'performance_income': total_points or 0,
+                'total_amount': total_amount,
+            }
+
+            return Response(response_data)
+        except Exception as e:
+            return Response({'error': str(e)})
