@@ -1,6 +1,6 @@
 from django.db.models import Sum
 from relationship.models import Follow
-from .serializers import VideoSerializer, LikeSerializer, CommentUpdateSerializer,CommentSerializer,VideoUpdateSerializer
+from .serializers import VideoSerializer, LikeSerializer, CommentUpdateSerializer,CommentSerializer,VideoUpdateSerializer,CommentDeSerializer
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
@@ -980,3 +980,24 @@ class PerformanceIncomeAPI(APIView):
             return Response(response_data)
         except Exception as e:
             return Response({'error': str(e)})
+class CommentDetailsView(generics.RetrieveAPIView):
+    serializer_class = CommentDeSerializer
+
+    def get_queryset(self):
+        comment_id = self.request.query_params.get('comment_id', None)
+        if comment_id is not None:
+            return Comment.objects.filter(id=comment_id)
+        else:
+            return Comment.objects.none()  # Return an empty queryset if comment_id is not provided
+
+    def get(self, request, *args, **kwargs):
+        comment_id = request.query_params.get('comment_id', None)
+        if comment_id is None:
+            return Response({'error': 'comment_id is required as a query parameter'}, status=400)
+
+        queryset = self.get_queryset()
+        if queryset.exists():
+            serializer = self.get_serializer(queryset.first())
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Comment not found'}, status=404)
