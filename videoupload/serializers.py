@@ -28,3 +28,16 @@ class PointSerializer(serializers.ModelSerializer):
     class Meta:
         model = Point
         fields = ['points']
+class CommentDeSerializer(serializers.ModelSerializer):
+    user_profile_photo = serializers.SerializerMethodField()
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ('user_profile_photo', 'user_name')
+
+    def get_user_profile_photo(self, obj):
+        return obj.user.profile_photo.url if obj.user.profile_photo else None
+
+    def get_user_name(self, obj):
+        return obj.user.name
