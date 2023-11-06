@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import CommentCreateView, GetVideoLink, CommentListView, VideoShareView, ReplyCommentListView, LikeViewSet, \
+from .views import CommentDetailsView,CommentCreateView, GetVideoLink, CommentListView, VideoShareView, ReplyCommentListView, LikeViewSet, \
     CommentCountView, CommentEditView, CommentDeleteView, VideoListView, GetVideoInfoView, VideoDeleteView, \
     PerformanceIncomeAPI
 from .views import VideoViewSet
@@ -21,7 +21,7 @@ urlpatterns = [
     path('comment-count/', CommentCountView.as_view(), name='comment-count'),
     path('comments/edit/', CommentEditView.as_view(), name='comment-edit'),
     path('comments/delete/', CommentDeleteView.as_view(), name='comment-delete'),
-
+path('get-comment-userdetails/', CommentDetailsView.as_view(), name='comment-details'),
     path('api/get_video_link/', GetVideoLink.as_view(), name='get_video_link'),#get the video link
     path('videos/share/', VideoShareView.as_view(), name='video-share'),#update and increase the share count at the every click of copy button
     # path('upload-video/', VideoCreateView.as_view(), name='upload-video'),
