@@ -15,6 +15,3 @@ urlpatterns = [
     path('update-password/', update_password, name='update_password'),
     path('wallet/', user_profile, name='user-profile'),
 ]
-
-
-

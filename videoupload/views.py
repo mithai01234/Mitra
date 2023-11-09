@@ -1,6 +1,7 @@
 from django.db.models import Sum
 from relationship.models import Follow
-from .serializers import VideoSerializer, LikeSerializer, CommentUpdateSerializer,CommentSerializer,VideoUpdateSerializer,CommentDeSerializer
+from .serializers import VideoSerializer, LikeSerializer, CommentUpdateSerializer, CommentSerializer, \
+    VideoUpdateSerializer, CommentDeSerializer
 from django.shortcuts import render, redirect, get_object_or_404
 from rest_framework.decorators import action
 from rest_framework import viewsets, status
@@ -37,7 +38,6 @@ import moviepy.editor as mp
 from PIL import Image
 import vultr
 import boto3
-
 import os
 import uuid
 from django.core.files.storage import FileSystemStorage
@@ -45,11 +45,9 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from moviepy.editor import VideoFileClip
 from PIL import Image
-
 from .models import Video
 from .serializers import VideoSerializer
 import tempfile
-
 import os
 import uuid
 import tempfile
@@ -61,14 +59,12 @@ from rest_framework.response import Response
 from django.core.files.base import ContentFile
 from PIL import Image
 import io
-
 import os
 import uuid
 import tempfile
 from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
- # Replace 'your_app' with your actual app name
 import boto3
 from storages.backends.s3boto3 import S3Boto3Storage
 from rest_framework.response import Response
@@ -83,6 +79,8 @@ class VideoViewSet(viewsets.ModelViewSet):
         if serializer. is_valid():
             video_file = request.data.get('file')
             title = request.data.get('title', '')
+
+
 
             if not video_file:
                 return Response({'error': 'No video file provided'}, status=status.HTTP_400_BAD_REQUEST)
@@ -117,7 +115,7 @@ class VideoViewSet(viewsets.ModelViewSet):
                     s3.upload_fileobj(io.BytesIO(thumbnail_data), 'your-new-bucket', thumbnail_key)
 
                     # Save the video data to the database, including the video and thumbnail keys
-                    serializer.save(file=video_key, thumbnail=thumbnail_key)
+                    serializer.save(file=video_key, thumbnail=thumbnail_key, status=True)
 
                     # Clean up temporary files
                     os.remove(thumbnail_path)
@@ -574,11 +572,11 @@ class VideoListView(generics.ListAPIView):
         user_id = self.request.query_params.get('user_id')
 
         hello = Video.objects.all()
-        hello = hello.order_by('-uploaded_at')
+        hello = hello.filter(status=True).order_by('-uploaded_at')
 
         # Filter videos by the user ID if it's provided in the query parameter
         if user_id is not None:
-            queryset = Video.objects.filter(user_id=user_id)
+            queryset = Video.objects.filter(user_id=user_id,status=True)
 
             # Sort the queryset by the last uploaded date in descending order (newest first)
             queryset = queryset.order_by('-uploaded_at')
@@ -1001,3 +999,14 @@ class CommentDetailsView(generics.RetrieveAPIView):
             return Response(serializer.data)
         else:
             return Response({'error': 'Comment not found'}, status=404)
+# class VideoListView(generics.ListAPIView):
+#     serializer_class = VideoSerializer
+#
+#     def get_queryset(self):
+#         # Get all videos
+#         queryset = Video.objects.all()
+#
+#         # Update the status of all videos to True
+#         queryset.update(status=True)
+#
+#         return queryset

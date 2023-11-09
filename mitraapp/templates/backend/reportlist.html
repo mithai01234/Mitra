@@ -73,11 +73,11 @@
                         <td>{{i.timestamp}}</td>
 
 <td>
-    {% if i.status %}
-        <a href="{% url 'reportlist/deactivate_catagory' i.id %}"  class="btn btn-danger text-white">Block</a>
+    {% if i.video.status %}
+        <a href="{% url 'reportlist/deactivate_catagory' i.video.id %}"  class="btn btn-danger text-white">Block</a>
 
     {% else %}
-        <a href="{% url 'reportlist/activate_catagory' i.id %}" class="btn btn-success text-white">Activate</a>
+        <a href="{% url 'reportlist/activate_catagory' i.video.id %}" class="btn btn-success text-white">Activate</a>
     {% endif %}
 
 

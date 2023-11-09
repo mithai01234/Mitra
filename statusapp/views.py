@@ -1,4 +1,6 @@
 from rest_framework import viewsets
+
+from registration.serializers import CustomUserSerializer
 from .models import Statusapp
 from .serializers import StatusappSerializer
 #
@@ -57,12 +59,14 @@ def upload_status(request):
             user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             return Response({'message': 'User not found'}, status=404)
-
+        request.data['status'] = True
         # Create the serializer with the user instance as user_id
         serializer = StatusappSerializer(data=request.data)
         if serializer.is_valid():
+
             # Assign the user instance as user_id and save the status
             serializer.save(user_id=user)
+
             return Response({'message': 'Status uploaded successfully'}, status=201)
         return Response(serializer.errors, status=400)
 from django.http import JsonResponse
@@ -131,3 +135,32 @@ def list_statuses(request):
                 statuses_data[following_user.name] = following_statuses_serializer.data
 
     return Response(statuses_data)
+@api_view(['GET'])
+def list_all_statuses(request):
+    # Query all Statusapp objects and order them by the 'uploaded_at' field in descending order
+    all_statuses_query = Statusapp.objects.all().order_by('-uploaded_at')
+    all_statuses_serializer = StatusappSerializer(all_statuses_query, many=True)
+
+    # Serialize the data and return it as a JSON response
+    return Response(all_statuses_serializer.data)
+from rest_framework.views import APIView
+class UserStatusAPIView(APIView):
+    def get(self, request):
+        user_id = self.request.query_params.get('user_id')
+        try:
+            # Check if the user with the provided user_id has a status
+            status_exists = Statusapp.objects.filter(user_id=user_id, status=True).exists()
+
+            if not status_exists:
+                return Response({'message': 'User has no status'})
+
+            # Retrieve the user with the provided user_id
+            user = CustomUser.objects.get(id=user_id)
+
+            # Serialize the user data
+            user_serializer = CustomUserSerializer(user)
+
+            return Response(user_serializer.data)
+
+        except CustomUser.DoesNotExist:
+            return Response({'message': 'User not found'})
