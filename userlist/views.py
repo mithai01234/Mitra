@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from registration.models import CustomUser
 from rest_framework import generics
 from registration.serializers import CustomUserSerializer
+from .serializers import CustomuSerializer
 def registerlist(request):
     registerapp=CustomUser.objects.all()
     context={
@@ -14,7 +15,7 @@ def registerlist(request):
     }
     return render(request,'backend/registerList.html',context)
 class CustomUserList(generics.ListAPIView):
-    serializer_class = CustomUserSerializer
+    serializer_class = CustomuSerializer
 
     def get_queryset(self):
         return CustomUser.objects.all()
