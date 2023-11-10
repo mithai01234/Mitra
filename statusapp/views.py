@@ -46,29 +46,57 @@ from registration.models import CustomUser
 #             return Response({'message': 'Status uploaded successfully'}, status=201)
 #         return Response(serializer.errors, status=400)
 def upload_status(request):
-    if request.method == 'POST':
-        # Get user_id from the request data
-        user_id = request.data.get('user_id', None)
 
-        # Check if user_id is provided in the request data
-        if user_id is None:
-            return Response({'message': 'user_id is required'}, status=400)
+    # Get user_id from the request data
+    user_id = request.data.get('user_id', None)
 
-        # Retrieve the user with the provided user_id
-        try:
-            user = CustomUser.objects.get(id=user_id)
-        except CustomUser.DoesNotExist:
-            return Response({'message': 'User not found'}, status=404)
-        request.data['status'] = True
-        # Create the serializer with the user instance as user_id
-        serializer = StatusappSerializer(data=request.data)
-        if serializer.is_valid():
+    # Check if user_id is provided in the request data
+    if user_id is None:
+        return Response({'message': 'user_id is required'})
 
-            # Assign the user instance as user_id and save the status
-            serializer.save(user_id=user)
+    # Retrieve the user with the provided user_id
+    try:
+        user = CustomUser.objects.get(id=user_id)
+    except CustomUser.DoesNotExist:
+        return Response({'message': 'User not found'})
 
-            return Response({'message': 'Status uploaded successfully'}, status=201)
-        return Response(serializer.errors, status=400)
+    # Add the user instance to the request data
+    request.data['user_id'] = user.id
+    request.data['status'] = True
+    # Create the serializer with the user instance as user_id
+    serializer = StatusappSerializer(data=request.data)
+    if serializer.is_valid():
+        # Assign the user instance as user_id and save the status
+        serializer.save()
+
+        return Response({'message': 'Status uploaded successfully'})
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# def upload_status(request):
+#     if request.method == 'POST':
+#         # Get user_id from the request data
+#         user_id = request.data.get('user_id', None)
+#
+#         # Check if user_id is provided in the request data
+#         if user_id is None:
+#             return Response({'message': 'user_id is required'}, status=400)
+#
+#         # Retrieve the user with the provided user_id
+#         try:
+#             user = CustomUser.objects.get(id=user_id)
+#         except CustomUser.DoesNotExist:
+#             return Response({'message': 'User not found'}, status=404)
+#         request.data['status'] = True
+#         # Create the serializer with the user instance as user_id
+#         serializer = StatusappSerializer(data=request.data)
+#         if serializer.is_valid():
+#
+#             # Assign the user instance as user_id and save the status
+#             serializer.save(user_id=user)
+#
+#             return Response({'message': 'Status uploaded successfully'}, status=201)
+#         return Response(serializer.errors, status=400)
 from django.http import JsonResponse
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer

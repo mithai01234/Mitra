@@ -5,9 +5,15 @@ from .models import Video, Comment, Like
 class VideoSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False)
     title = serializers.CharField(required=False)
+    comment_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Video
         fields = '__all__'
+
+    def get_comment_count(self, obj):
+        # You can retrieve the comment count for the video object 'obj'
+        return Comment.objects.filter(video=obj).count()
 class VideoUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Video

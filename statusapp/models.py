@@ -14,14 +14,14 @@ class Statusapp(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     status = models.BooleanField(default=True)
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # Calculate the cutoff time (24 hours ago)
-        cutoff_time = timezone.now() - timedelta(minutes=1)
-
-        # Delete objects older than cutoff_time
-        Statusapp.objects.filter(uploaded_at__lt=cutoff_time).delete()
+    # def save(self, *args, **kwargs):
+    #     super().save(*args, **kwargs)
+    #
+    #     # Calculate the cutoff time (24 hours ago)
+    #     cutoff_time = timezone.now() - timedelta(minutes=1)
+    #
+    #     # Delete objects older than cutoff_time
+    #     Statusapp.objects.filter(uploaded_at__lt=cutoff_time).delete()
 
     def __str__(self):
         return str(self.id)

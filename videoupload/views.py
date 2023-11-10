@@ -572,11 +572,11 @@ class VideoListView(generics.ListAPIView):
         user_id = self.request.query_params.get('user_id')
 
         hello = Video.objects.all()
-        hello = hello.filter(status=True).order_by('-uploaded_at')
+        hello = hello.order_by('-uploaded_at')
 
         # Filter videos by the user ID if it's provided in the query parameter
         if user_id is not None:
-            queryset = Video.objects.filter(user_id=user_id,status=True)
+            queryset = Video.objects.filter(user_id=user_id)
 
             # Sort the queryset by the last uploaded date in descending order (newest first)
             queryset = queryset.order_by('-uploaded_at')
@@ -699,6 +699,8 @@ class VideoListView(generics.ListAPIView):
             return queryset
         else:
             return hello
+
+
 
 
 class CommentCreateView(generics.CreateAPIView):
